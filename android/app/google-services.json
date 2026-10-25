@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "542945871024",
+    "project_id": "chat-3af33",
+    "storage_bucket": "chat-3af33.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:542945871024:android:b48ca4f062f512dc082775",
+        "android_client_info": {
+          "package_name": "com.gasflow.tracker.gas_tracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "542945871024-bh5l0f1r0nuc0n5cr2qd4gbh9i9f6hmb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCrx46_a4Wuyc7BlPBYPigPhJPF1AxrMU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "542945871024-bh5l0f1r0nuc0n5cr2qd4gbh9i9f6hmb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

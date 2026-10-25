@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // -------------------------------------------------------------------------
+    // User Profiles Collection: Mandatory User Details (Name, Phone, Town)
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // -------------------------------------------------------------------------
+    // Gas Stations Collection: Public Read, Authenticated Write & Add
+    // -------------------------------------------------------------------------
+    match /stations/{stationId} {
+      // Any citizen can read gas availability in real-time without signing in
+      allow read: if true;
+
+      // Allow authenticated citizens to add new gas stations
+      allow create: if isAuthenticated();
+
+      // Allow authenticated users to remove obsolete stations
+      allow delete: if isAuthenticated();
+
+      // Crowdsourced update rules:
+      // 1. User must be authenticated (Anonymous or Google)
+      // 2. Server timestamp must be used for lastUpdated
+      // 3. User UID must be recorded in lastUpdatedBy (or system_seed)
+      allow update: if isAuthenticated() 
+        && request.resource.data.lastUpdated == request.time
+        && (
+          request.resource.data.lastUpdatedBy == 'system_seed'
+          || (
+            request.resource.data.lastUpdatedBy == request.auth.uid
+            && (
+              !exists(/databases/$(database)/documents/user_updates/$(request.auth.uid + '_' + stationId))
+              || request.time >= get(/databases/$(database)/documents/user_updates/$(request.auth.uid + '_' + stationId)).data.lastUpdatedAt + duration.value(30, 'm')
+            )
+          )
+        );
+
+      // Audit Log subcollection: History of all community reports for each station
+      match /updates/{updateId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() 
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.timestamp == request.time;
+        allow update, delete: if false; // Audit logs are immutable
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // User Updates Tracking: Enforces the 30-Minute Cooldown per User per Station
+    // -------------------------------------------------------------------------
+    match /user_updates/{userStationKey} {
+      allow read: if isAuthenticated();
+
+      // Enforce 30-minute anti-spam cooldown window:
+      allow write: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.lastUpdatedAt == request.time
+        && (
+          !exists(/databases/$(database)/documents/user_updates/$(userStationKey))
+          || request.time >= resource.data.lastUpdatedAt + duration.value(30, 'm')
+        );
+    }
+  }
+}
